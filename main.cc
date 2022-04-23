@@ -30,6 +30,16 @@ struct test
     {
         cout << "Cmd executed!'\n";
     }
+
+    void begin()
+    {
+        cout << "BEGIN!'\n";
+    }
+
+    void end()
+    {
+        cout << "END!'\n";
+    }
 };
 
 int main(int argc, char const *argv[])
@@ -42,6 +52,8 @@ int main(int argc, char const *argv[])
 
     pars.call_before_each_command(&test::before)
         .call_after_each_command(&test::after)
+        .call_before_all(&test::begin)
+        .call_after_each_command(&test::end)
         .add_command("hello",   &test::hello,   "First example")
         .add_command("display", &test::display, "Print the given string")
         .add_command("exit",    &test::exit,    "End the loop");

@@ -80,7 +80,8 @@ namespace repl
 
         static constexpr auto chars =  "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                                 "abcdefghijklmnopqrstuvwxyz"
-                                "0123456789";
+                                "0123456789"
+                                "\\?'^\".:,;-_+/*=£$%&|()[]{}#@";
 
         static constexpr auto npos = std::string::npos;
 
@@ -119,6 +120,11 @@ namespace repl
         // Type used for handlers invocated before and after each command
         using after_cmd_ptr = void (T::*)(void);
 
+        // Type used for handlers invocated before and after each command
+        using before_all_ptr = void (T::*)(void);
+        // Type used for handlers invocated before and after each command
+        using after_all_ptr = void (T::*)(void);
+
         parameters() = default;
         parameters(const parameters&) = default;
         parameters(parameters&&) = default;
@@ -144,6 +150,10 @@ namespace repl
                 cmds[c.name()] = c;
             }
 
+            if (this->b_all != nullptr)
+            {
+                (status_obj.*b_all)();
+            }
             try
             {
                 while (true)
@@ -190,6 +200,10 @@ namespace repl
                 {
                     (status_obj.*after)();
                 }
+                if (this->a_all != nullptr)
+                {
+                    (status_obj.*a_all)();
+                }
             }
         }
 
@@ -204,9 +218,23 @@ namespace repl
             this->after = handler;
             return *this;
         }
+
+        auto& call_before_all(before_all_ptr handler)
+        {
+            this->b_all = handler;
+            return *this;
+        }
+
+        auto& call_aefore_all(after_all_ptr handler)
+        {
+            this->a_all = handler;
+            return *this;
+        }
     private:
         before_cmd_ptr before{};
         after_cmd_ptr after{};
+        before_all_ptr b_all{};
+        after_all_ptr a_all{};
     };
 
 } // namespace repl
