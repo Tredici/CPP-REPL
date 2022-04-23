@@ -28,17 +28,17 @@ struct test
     }
     void after()
     {
-        cout << "Cmd executed!'\n";
+        cout << "Cmd executed!\n";
     }
 
     void begin()
     {
-        cout << "BEGIN!'\n";
+        cout << "BEGIN!\n";
     }
 
     void end()
     {
-        cout << "END!'\n";
+        cout << "END!\n";
     }
 };
 
