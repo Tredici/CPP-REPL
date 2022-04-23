@@ -114,6 +114,10 @@ namespace repl
         }
     public:
         using cmd_ptr = typename command<T>::cmd_ptr;
+        // Type used for handlers invocated before and after each command
+        using before_cmd_ptr = void (T::*)(std::string&, std::string&);
+        // Type used for handlers invocated before and after each command
+        using after_cmd_ptr = void (T::*)(void);
 
         parameters() = default;
         parameters(const parameters&) = default;
@@ -160,7 +164,16 @@ namespace repl
                         try
                         {
                             const auto& command = cmds.at(cmd);
+
+                            if (this->before != nullptr)
+                            {
+                                (status_obj.*before)(cmd, args);
+                            }
                             (status_obj.*command.function())(args);
+                            if (this->after != nullptr)
+                            {
+                                (status_obj.*after)();
+                            }
                         }
                         catch(const std::out_of_range&)
                         {
@@ -171,8 +184,29 @@ namespace repl
                 }
             }
             catch(const exit& e) // normal termination
-            {}
+            {
+                // to be called also at the end
+                if (this->after != nullptr)
+                {
+                    (status_obj.*after)();
+                }
+            }
         }
+
+        auto& call_before_each_command(before_cmd_ptr handler)
+        {
+            this->before = handler;
+            return *this;
+        }
+
+        auto& call_after_each_command(after_cmd_ptr handler)
+        {
+            this->after = handler;
+            return *this;
+        }
+    private:
+        before_cmd_ptr before{};
+        after_cmd_ptr after{};
     };
 
 } // namespace repl
