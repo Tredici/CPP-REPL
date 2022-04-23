@@ -113,6 +113,17 @@ namespace repl
             (void)arguments;
             std::cerr << "Cmd: '" << command << "' not found\n";
         }
+
+        std::string get_input()
+        {
+            std::string input;
+            do
+            {
+                std::cout << ">>";
+                input = get_trimmed_line();
+            } while (input.empty());
+            return input;
+        }
     public:
         using cmd_ptr = typename command<T>::cmd_ptr;
         // Type used for handlers invocated before and after each command
@@ -158,38 +169,34 @@ namespace repl
             {
                 while (true)
                 {
-                    std::cout << ">>";
-                    auto trimmed = get_trimmed_line();
-                    if (!trimmed.empty())
+                    auto trimmed = get_input();
+                    std::string cmd, args;
+                    parse(trimmed, cmd, args);
+
+                    if (cmd == "help"s) // requested help
                     {
-                        std::string cmd, args;
-                        parse(trimmed, cmd, args);
+                        help(cmds);
+                        continue;
+                    }
 
-                        if (cmd == "help"s) // requested help
-                        {
-                            help(cmds);
-                            continue;
-                        }
+                    try
+                    {
+                        const auto& command = cmds.at(cmd);
 
-                        try
+                        if (this->before != nullptr)
                         {
-                            const auto& command = cmds.at(cmd);
-
-                            if (this->before != nullptr)
-                            {
-                                (status_obj.*before)(cmd, args);
-                            }
-                            (status_obj.*command.function())(args);
-                            if (this->after != nullptr)
-                            {
-                                (status_obj.*after)();
-                            }
+                            (status_obj.*before)(cmd, args);
                         }
-                        catch(const std::out_of_range&)
+                        (status_obj.*command.function())(args);
+                        if (this->after != nullptr)
                         {
-                            handle_not_found(cmd, args);
-                            continue;
+                            (status_obj.*after)();
                         }
+                    }
+                    catch(const std::out_of_range&)
+                    {
+                        handle_not_found(cmd, args);
+                        continue;
                     }
                 }
             }
@@ -225,7 +232,7 @@ namespace repl
             return *this;
         }
 
-        auto& call_aefore_all(after_all_ptr handler)
+        auto& call_after_all(after_all_ptr handler)
         {
             this->a_all = handler;
             return *this;
