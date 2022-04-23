@@ -119,7 +119,7 @@ namespace repl
             std::string input;
             do
             {
-                std::cout << ">>";
+                std::cout << prompt_str;
                 input = get_trimmed_line();
             } while (input.empty());
             return input;
@@ -237,11 +237,24 @@ namespace repl
             this->a_all = handler;
             return *this;
         }
+
+        auto& prompt(const std::string& prompt_str)
+        {
+            this->prompt_str = prompt_str;
+            return *this;
+        }
+
+        const std::string& prompt() const
+        {
+            return this->prompt_str;
+        }
     private:
         before_cmd_ptr before{};
         after_cmd_ptr after{};
         before_all_ptr b_all{};
         after_all_ptr a_all{};
+
+        std::string prompt_str = ">>>";
     };
 
 } // namespace repl

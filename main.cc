@@ -50,7 +50,8 @@ int main(int argc, char const *argv[])
     repl::parameters<decltype(t)> pars;
     cout << "*** TEST REPL ***" << endl;
 
-    pars.call_before_each_command(&test::before)
+    pars.prompt("###")
+        .call_before_each_command(&test::before)
         .call_after_each_command(&test::after)
         .call_before_all(&test::begin)
         .call_after_all(&test::end)
