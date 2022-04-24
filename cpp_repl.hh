@@ -12,6 +12,23 @@ namespace repl
     class exit : public std::exception
     {};
 
+    // Thrown when an error occurs while calling before
+    // or after handlers
+    class handler_error : public std::runtime_error
+    {
+        std::string msg;
+        std::exception cause_e;
+    public:
+        handler_error(const std::string& msg, const std::exception& cause)
+        : std::runtime_error{msg.c_str()}, msg{msg + " => " + cause.what()}, cause_e{cause}
+        {}
+
+        virtual const char* what() const noexcept override
+        {
+            return msg.c_str();
+        }
+    };
+
     template <typename T>
     class command
     {
@@ -163,7 +180,14 @@ namespace repl
 
             if (this->b_all != nullptr)
             {
-                (status_obj.*b_all)();
+                try
+                {
+                    (status_obj.*b_all)();
+                }
+                catch(const std::exception& e)
+                {
+                    throw handler_error("before all handler threw", e);
+                }
             }
             try
             {
@@ -185,12 +209,26 @@ namespace repl
 
                         if (this->before != nullptr)
                         {
-                            (status_obj.*before)(cmd, args);
+                            try
+                            {
+                                (status_obj.*before)(cmd, args);
+                            }
+                            catch(const std::exception& e)
+                            {
+                                throw handler_error("before handler threw", e);
+                            }
                         }
                         (status_obj.*command.function())(args);
                         if (this->after != nullptr)
                         {
-                            (status_obj.*after)();
+                            try
+                            {
+                                (status_obj.*after)();
+                            }
+                            catch(const std::exception& e)
+                            {
+                                throw handler_error("after handler threw", e);
+                            }
                         }
                     }
                     catch(const std::out_of_range&)
@@ -205,11 +243,25 @@ namespace repl
                 // to be called also at the end
                 if (this->after != nullptr)
                 {
-                    (status_obj.*after)();
+                    try
+                    {
+                        (status_obj.*after)();
+                    }
+                    catch(const std::exception& e)
+                    {
+                        throw handler_error("after handler threw", e);
+                    }
                 }
                 if (this->a_all != nullptr)
                 {
-                    (status_obj.*a_all)();
+                    try
+                    {
+                        (status_obj.*a_all)();
+                    }
+                    catch(const std::exception& e)
+                    {
+                        throw handler_error("after all handler threw", e);
+                    }
                 }
             }
         }
