@@ -29,6 +29,38 @@ namespace repl
         }
     };
 
+    // thrown when before_all throws
+    class initialisation_error : public std::runtime_error
+    {
+        std::string msg;
+        std::exception cause_e;
+    public:
+        initialisation_error(const std::string& msg, const std::exception& cause)
+        : std::runtime_error{msg.c_str()}, msg{msg + " => " + cause.what()}, cause_e{cause}
+        {}
+
+        virtual const char* what() const noexcept override
+        {
+            return msg.c_str();
+        }
+    };
+
+    // thrown when before_all throws
+    class termination_error : public std::runtime_error
+    {
+        std::string msg;
+        std::exception cause_e;
+    public:
+        termination_error(const std::string& msg, const std::exception& cause)
+        : std::runtime_error{msg.c_str()}, msg{msg + " => " + cause.what()}, cause_e{cause}
+        {}
+
+        virtual const char* what() const noexcept override
+        {
+            return msg.c_str();
+        }
+    };
+
     template <typename T>
     class command
     {
@@ -186,7 +218,7 @@ namespace repl
                 }
                 catch(const std::exception& e)
                 {
-                    throw handler_error("before all handler threw", e);
+                    throw initialisation_error("before all handler threw", e);
                 }
             }
             try
@@ -252,16 +284,16 @@ namespace repl
                         throw handler_error("after handler threw", e);
                     }
                 }
-                if (this->a_all != nullptr)
+            }
+            if (this->a_all != nullptr)
+            {
+                try
                 {
-                    try
-                    {
-                        (status_obj.*a_all)();
-                    }
-                    catch(const std::exception& e)
-                    {
-                        throw handler_error("after all handler threw", e);
-                    }
+                    (status_obj.*a_all)();
+                }
+                catch(const std::exception& e)
+                {
+                    throw termination_error("after all handler threw", e);
                 }
             }
         }
