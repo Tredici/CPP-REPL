@@ -12,6 +12,12 @@ namespace repl
     class exit : public std::exception
     {};
 
+    // Thrown when the user inserted CTRL+D
+    // or performed any equivalent action
+    // closing the input stream
+    class input_stream_closed : public std::exception
+    {};
+
     // Thrown when an error occurs while calling before
     // or after handlers
     class handler_error : public std::runtime_error
@@ -118,7 +124,8 @@ namespace repl
         std::string getline()
         {
             std::string line;
-            std::getline(std::cin, line);
+            if (!std::getline(std::cin, line))
+                throw input_stream_closed();
             return line;
         }
 
@@ -284,6 +291,10 @@ namespace repl
                         throw handler_error("after handler threw", e);
                     }
                 }
+            }
+            catch(const input_stream_closed&) // user inserted CTRL+D or similar
+            {
+                std::cout << '\n';
             }
             if (this->a_all != nullptr)
             {
